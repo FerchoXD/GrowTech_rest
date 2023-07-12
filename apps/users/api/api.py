@@ -23,7 +23,6 @@ class UserViewSet(viewsets.GenericViewSet):
     def get_queryset(self):
         if self.queryset is None:
             self.queryset = self.model.objects\
-                            .filter(is_active=True)\
                             .values('id', 'username', 'email')
         return self.queryset
 
@@ -78,7 +77,7 @@ class UserViewSet(viewsets.GenericViewSet):
         }, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, pk=None):
-        user_destroy = self.model.objects.filter(id=pk).update(is_active=False)
+        user_destroy = self.model.objects.filter(id=pk)
         if user_destroy == 1:
             return Response({
                 'message': 'Usuario eliminado correctamente'

@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'apps.users',
+    'corsheaders',
     #'automatic_crud',
     'rest_framework',
     'rest_framework.authtoken',
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'growtech_rest.urls'
@@ -113,6 +115,8 @@ AUTH_USER_MODEL = 'users.User'
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:8000",
     "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
 ]
 
 #cualquier direccion que no sea de las de arriba sera bloqueada
