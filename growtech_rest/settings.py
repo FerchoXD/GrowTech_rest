@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'apps.SIL',
     'apps.ST',
     'apps.SHS',
+    'apps.SHA',
     'corsheaders',
     #'automatic_crud',
     'rest_framework',
