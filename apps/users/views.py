@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from rest_framework.permissions import IsAuthenticated
 from apps.users.api.serializers import (
-    CustomTokenObtainPairSerializer, CustomUserSerializer, UserRegisterSerializer
+    CustomTokenObtainPairSerializer, CustomUserSerializer, UserRegisterSerializer,LogoutSerializer
 )
 from apps.users.models import User
 
@@ -62,11 +62,23 @@ class Register(GenericAPIView):
         
         return Response(data, status=status.HTTP_201_CREATED)
 
-
+'''
 class Logout(GenericAPIView):
+
+    serializer_class = LogoutSerializer
+
     def post(self, request, *args, **kwargs):
-        user = User.objects.filter(id=request.data.get('user', 0))
+        user = User.objects.filter(id=request.data.get('user', 1))
         if user.exists():
             RefreshToken.for_user(user.first())
             return Response({'message': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
         return Response({'error': 'No existe este usuario.'}, status=status.HTTP_400_BAD_REQUEST)
+'''
+class Logout(GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = [IsAuthenticated] 
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        RefreshToken.for_user(user)
+        return Response({'message': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)

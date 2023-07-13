@@ -10,7 +10,8 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 from apps.users.views import Login,Logout,Register
-
+from apps.plants.api.urls import urlpatterns 
+from apps.SIL.api.urls import urlpatterns
 schema_view = get_schema_view(
    openapi.Info(
       title="Documentación de API",
@@ -36,6 +37,7 @@ urlpatterns = [
    path('users/',include('apps.users.api.routers')),
    path('register/', Register.as_view(), name='register'),
    path('plants/', include('apps.plants.api.urls')),
+   path('intensidad/', include('apps.SIL.api.urls')),
 ]
 
 urlpatterns += [

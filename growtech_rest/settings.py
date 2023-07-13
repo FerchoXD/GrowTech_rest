@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.users',
     'apps.plants',
+    'apps.SIL',
     'corsheaders',
     #'automatic_crud',
     'rest_framework',

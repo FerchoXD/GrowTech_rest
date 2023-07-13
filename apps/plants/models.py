@@ -3,10 +3,14 @@ from apps.users.models import User
 
 class Planta(models.Model):
     nombre = models.CharField('Nombre', max_length=100)
-    usuario = models.ForeignKey(User,on_delete=models.CASCADE)
-    nombreU = User.username
+    usuario_id = models.ForeignKey(User, on_delete=models.CASCADE, to_field='id')
+    nombreU = models.CharField('Nombre de Usuario', max_length=100, blank=True)
     humedad = models.IntegerField()
     status = models.BooleanField()
+
+    def save(self, *args, **kwargs):
+        self.nombreU = self.usuario_id.username
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Planta'

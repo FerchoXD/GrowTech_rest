@@ -68,3 +68,5 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         
         return account
 
+class LogoutSerializer(serializers.Serializer):
+    pass
