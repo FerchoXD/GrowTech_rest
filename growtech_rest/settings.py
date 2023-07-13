@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'apps.users',
     'apps.plants',
+    'apps.notifications',
     'apps.SIL',
     'apps.ST',
     'apps.SHS',

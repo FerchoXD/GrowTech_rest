@@ -41,6 +41,7 @@ urlpatterns = [
    path('temperatura/', include('apps.ST.api.urls')),
    path('humedad/suelo/', include('apps.SHS.api.urls')),
    path('humedad/ambiente/', include('apps.SHA.api.urls')),
+   path('notificacion/', include('apps.notifications.api.urls')),
 ]
 
 urlpatterns += [
