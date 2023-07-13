@@ -38,6 +38,7 @@ urlpatterns = [
    path('register/', Register.as_view(), name='register'),
    path('plants/', include('apps.plants.api.urls')),
    path('intensidad/', include('apps.SIL.api.urls')),
+   path('temperatura/', include('apps.ST.api.urls')),
 ]
 
 urlpatterns += [

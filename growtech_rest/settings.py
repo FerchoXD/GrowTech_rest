@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.plants',
     'apps.SIL',
+    'apps.ST',
     'corsheaders',
     #'automatic_crud',
     'rest_framework',
