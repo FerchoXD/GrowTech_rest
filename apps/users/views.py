@@ -29,10 +29,12 @@ class Login(TokenObtainPairView):
             login_serializer = self.serializer_class(data=request.data)
             if login_serializer.is_valid():
                 user_serializer = CustomUserSerializer(user)
+                user_id = user.id
                 return Response({
                     'token': login_serializer.validated_data.get('access'),
                     'refresh-token': login_serializer.validated_data.get('refresh'),
                     'user': user_serializer.data,
+                    'user_id': user_id, 
                     'message': 'Inicio de Sesion Existoso'
                 }, status=status.HTTP_200_OK)
             return Response({'error': 'Contraseña o nombre de usuario incorrectos'}, status=status.HTTP_400_BAD_REQUEST)
