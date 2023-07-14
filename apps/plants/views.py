@@ -50,3 +50,11 @@ class ValidacionPlants(GenericAPIView):
                 'response': 'Los datos no existen en la base de datos',
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+class PlantaListByUser(ListAPIView):
+    serializer_class = PlantaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.kwargs['id']
+        return Planta.objects.filter(usuario_id=user_id)
