@@ -4,7 +4,7 @@ module.exports = {
         name: 'GrowTech_rest',
         script: 'manage.py',
         args: 'runserver',
-        interpreter: 'python',
+        interpreter: 'python3',
         watch: true,
         autorestart: true,
       },
