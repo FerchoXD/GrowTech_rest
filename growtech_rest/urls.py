@@ -9,7 +9,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-from apps.users.views import Login,Logout,Register
+from apps.users.views import Login,Logout,Register,EmailSenderView
 from apps.plants.api.urls import urlpatterns 
 from apps.SIL.api.urls import urlpatterns
 schema_view = get_schema_view(
@@ -42,6 +42,7 @@ urlpatterns = [
    path('humedad/suelo/', include('apps.SHS.api.urls')),
    path('humedad/ambiente/', include('apps.SHA.api.urls')),
    path('notificacion/', include('apps.notifications.api.urls')),
+   path('email-sender/', EmailSenderView.as_view(), name='email-sender'),
 ]
 
 urlpatterns += [

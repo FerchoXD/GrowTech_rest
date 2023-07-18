@@ -12,8 +12,15 @@ from apps.users.api.serializers import (
 )
 from apps.users.models import User
 
+#importaciones para senEmail
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+from dotenv import load_dotenv
 
-
+# Carga las variables de entorno desde el archivo .env
+load_dotenv()
 class Login(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
@@ -64,18 +71,6 @@ class Register(GenericAPIView):
         
         return Response(data, status=status.HTTP_201_CREATED)
 
-'''
-class Logout(GenericAPIView):
-
-    serializer_class = LogoutSerializer
-
-    def post(self, request, *args, **kwargs):
-        user = User.objects.filter(id=request.data.get('user', 1))
-        if user.exists():
-            RefreshToken.for_user(user.first())
-            return Response({'message': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
-        return Response({'error': 'No existe este usuario.'}, status=status.HTTP_400_BAD_REQUEST)
-'''
 class Logout(GenericAPIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated] 
@@ -83,4 +78,50 @@ class Logout(GenericAPIView):
     def post(self, request, *args, **kwargs):
         user = request.user
         RefreshToken.for_user(user)
-        return Response({'message': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK)
+        return Response({'message': 'Sesión cerrada correctamente.'}, status=status.HTTP_200_OK) 
+
+class EmailSender:
+    @staticmethod
+    def send_email(username):
+        try:
+            user = User.objects.get(username=username)
+            print(f"Usuario encontrado: {user.username}")
+            email = user.email
+
+            sender_email =  os.environ.get('SENDER_EMAIL') # Cambia esto con tu dirección de correo electrónico
+            receiver_email = os.environ.get('RECEIVER_EMAIL')
+            password = os.environ.get('PASSWORD_EMAIL')  # Cambia esto con tu contraseña de correo electrónico
+
+            subject = "Solicitud de ayuda y soporte"
+            body = f"Se necesita ayuda y soporte para el usuario {username} con email: {email}  "
+
+            message = MIMEMultipart()
+            message["From"] = sender_email
+            message["To"] = receiver_email
+            message["Subject"] = subject
+            message.attach(MIMEText(body, "plain"))
+            
+            
+
+            try:
+                with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                    server.login(sender_email, password)
+                    server.send_message(message)
+                    return True
+            except smtplib.SMTPException:
+                return False
+        except User.DoesNotExist:
+            return False
+
+class EmailSenderView(GenericAPIView):
+    def post(self, request, *args, **kwargs):
+        username = request.data.get('username', '')
+
+        if EmailSender.send_email(username):
+            return Response({
+                'message': 'Ayuda y soporte se contactará contigo en seguida'
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': 'usuario no encontrado o fallo en el servidor'
+            }, status=status.HTTP_404_NOT_FOUND)
