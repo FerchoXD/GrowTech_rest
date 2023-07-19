@@ -13,7 +13,10 @@ from apps.SHS.models import HumedadDeSuelo
 from apps.SHA.models import HumedadDeAmbiente
 from apps.SIL.models import IntensidadDeLuz
 from .api.serializers import DataSerializer
+from datetime import datetime, time
 from django.db.models import Avg
+from django.db.models.functions import TruncDate
+
 
 
 class PlantaList(ListAPIView):
@@ -71,7 +74,6 @@ class PlantaListByUser(ListAPIView):
         user_id = self.kwargs['id']
         return Planta.objects.filter(usuario_id=user_id)
 
-
 class DatosPromedios(GenericAPIView):
     serializer_class = DataSerializer
 
@@ -85,30 +87,68 @@ class DatosPromedios(GenericAPIView):
                 'error': 'El usuario con el ID proporcionado no existe.',
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+        
+        if not Planta.objects.filter(usuario_id=usuario_id).exists():
+            response_data = {
+                'message': 'No tienes ninguna planta asociada. Por favor, agrega al menos una planta para monitorear.'
+            }
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
 
-        intensidad_promedio = IntensidadDeLuz.objects.filter(planta__usuario_id=usuario_id).values(
-            'fecha_hora').annotate(valor_avg=Avg('valor')).values('fecha_hora', 'valor_avg')
+        intensidad_promedio = IntensidadDeLuz.objects.filter(planta__usuario_id=usuario_id).annotate(
+            dia=TruncDate('fecha_hora')
+        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
 
-        temperatura_promedio = Temperatura.objects.filter(planta__usuario_id=usuario_id).values(
-            'fecha_hora').annotate(valor_avg=Avg('valor')).values('fecha_hora', 'valor_avg')
+        temperatura_promedio = Temperatura.objects.filter(planta__usuario_id=usuario_id).annotate(
+            dia=TruncDate('fecha_hora')
+        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
 
-        humedad_suelo_promedio = HumedadDeSuelo.objects.filter(planta__usuario_id=usuario_id).values(
-            'fecha_hora').annotate(valor_avg=Avg('valor')).values('fecha_hora', 'valor_avg')
+        humedad_suelo_promedio = HumedadDeSuelo.objects.filter(planta__usuario_id=usuario_id).annotate(
+            dia=TruncDate('fecha_hora')
+        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
 
-        humedad_ambiente_promedio = HumedadDeAmbiente.objects.filter(planta__usuario_id=usuario_id).values(
-            'fecha_hora').annotate(valor_avg=Avg('valor')).values('fecha_hora', 'valor_avg')
+        humedad_ambiente_promedio = HumedadDeAmbiente.objects.filter(planta__usuario_id=usuario_id).annotate(
+            dia=TruncDate('fecha_hora')
+        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
 
-        data = {
-    'usuario_id': usuario_id,
-    'fecha_hora': intensidad_promedio[0]['fecha_hora'].strftime('%Y-%m-%d %H:%M:%S') if intensidad_promedio else None,
-    'intensidad_promedio': intensidad_promedio[0]['valor_avg'] if intensidad_promedio else None,
-    'temperatura_promedio': temperatura_promedio[0]['valor_avg'] if temperatura_promedio else None,
-    'humedad_suelo_promedio': humedad_suelo_promedio[0]['valor_avg'] if humedad_suelo_promedio else None,
-    'humedad_ambiente_promedio': humedad_ambiente_promedio[0]['valor_avg'] if humedad_ambiente_promedio else None
-}
+        data = []
+        for item in intensidad_promedio:
+            dia = datetime.combine(item['dia'], time.min)
+            planta_id = item['planta_id']
+            planta = IntensidadDeLuz.objects.get(id=planta_id).planta
+            data.append({
+                'dia': dia.isoformat(),
+                'planta': planta.nombre,
+                'valor': item['valor_avg']
+            })
 
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        response_data = serializer.validated_data
-        return Response(response_data, status=status.HTTP_200_OK)
+        for item in temperatura_promedio:
+            dia = datetime.combine(item['dia'], time.min)
+            planta_id = item['planta_id']
+            planta = Temperatura.objects.get(id=planta_id).planta
+            data.append({
+                'dia': dia.isoformat(),
+                'planta': planta.nombre,
+                'valor': item['valor_avg']
+            })
 
+        for item in humedad_suelo_promedio:
+            dia = datetime.combine(item['dia'], time.min)
+            planta_id = item['planta_id']
+            planta = HumedadDeSuelo.objects.get(id=planta_id).planta
+            data.append({
+                'dia': dia.isoformat(),
+                'planta': planta.nombre,
+                'valor': item['valor_avg']
+            })
+
+        for item in humedad_ambiente_promedio:
+            dia = datetime.combine(item['dia'], time.min)
+            planta_id = item['planta_id']
+            planta = HumedadDeAmbiente.objects.get(id=planta_id).planta
+            data.append({
+                'dia': dia.isoformat(),
+                'planta': planta.nombre,
+                'valor': item['valor_avg']
+            })
+
+        return Response(data, status=status.HTTP_200_OK)
