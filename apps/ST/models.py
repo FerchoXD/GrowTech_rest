@@ -3,7 +3,7 @@ from apps.plants.models import Planta
 
 class Temperatura(models.Model):
     valor = models.IntegerField()
-    fecha_hora = models.DateField(auto_now_add=True)
+    fecha_hora = models.DateTimeField(auto_now_add=True)
     planta = models.ForeignKey(Planta, on_delete=models.CASCADE,default=1)
 
     class Meta:
