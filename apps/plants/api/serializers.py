@@ -13,3 +13,10 @@ class DataSerializer(serializers.Serializer):
     temperatura_promedio = serializers.FloatField()
     humedad_suelo_promedio = serializers.FloatField()
     humedad_ambiente_promedio = serializers.FloatField()
+
+
+
+class ConsultaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Planta
+        fields = ['id', 'nombre']

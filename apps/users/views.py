@@ -11,7 +11,6 @@ from apps.users.api.serializers import (
     CustomTokenObtainPairSerializer, CustomUserSerializer, UserRegisterSerializer,LogoutSerializer
 )
 from apps.users.models import User
-
 #importaciones para senEmail
 import smtplib
 from email.mime.text import MIMEText

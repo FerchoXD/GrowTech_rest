@@ -7,7 +7,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework import status
 from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
-
+from apps.plants.api.serializers import ConsultaSerializer
 from apps.ST.models import Temperatura
 from apps.SHS.models import HumedadDeSuelo
 from apps.SHA.models import HumedadDeAmbiente
@@ -16,7 +16,8 @@ from .api.serializers import DataSerializer
 from datetime import datetime, time
 from django.db.models import Avg
 from django.db.models.functions import TruncDate
-
+from rest_framework.generics import get_object_or_404
+from rest_framework.response import Response
 
 
 class PlantaList(ListAPIView):
@@ -79,6 +80,7 @@ class DatosPromedios(GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         usuario_id = request.data.get('usuario_id')
+        planta_id = request.data.get('planta_id')
 
         try:
             usuario = User.objects.get(id=usuario_id)
@@ -87,34 +89,34 @@ class DatosPromedios(GenericAPIView):
                 'error': 'El usuario con el ID proporcionado no existe.',
             }
             return Response(response_data, status=status.HTTP_404_NOT_FOUND)
-        
-        if not Planta.objects.filter(usuario_id=usuario_id).exists():
+
+        try:
+            planta = Planta.objects.get(id=planta_id, usuario=usuario)
+        except ObjectDoesNotExist:
             response_data = {
-                'message': 'No tienes ninguna planta asociada. Por favor, agrega al menos una planta para monitorear.'
+                'error': 'La planta con el ID proporcionado no existe para este usuario.',
             }
-            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
 
-        intensidad_promedio = IntensidadDeLuz.objects.filter(planta__usuario_id=usuario_id).annotate(
+        intensidad_promedio = IntensidadDeLuz.objects.filter(planta=planta).annotate(
             dia=TruncDate('fecha_hora')
-        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
+        ).values('dia').annotate(valor_avg=Avg('valor')).values('dia', 'valor_avg')
 
-        temperatura_promedio = Temperatura.objects.filter(planta__usuario_id=usuario_id).annotate(
+        temperatura_promedio = Temperatura.objects.filter(planta=planta).annotate(
             dia=TruncDate('fecha_hora')
-        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
+        ).values('dia').annotate(valor_avg=Avg('valor')).values('dia', 'valor_avg')
 
-        humedad_suelo_promedio = HumedadDeSuelo.objects.filter(planta__usuario_id=usuario_id).annotate(
+        humedad_suelo_promedio = HumedadDeSuelo.objects.filter(planta=planta).annotate(
             dia=TruncDate('fecha_hora')
-        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
+        ).values('dia').annotate(valor_avg=Avg('valor')).values('dia', 'valor_avg')
 
-        humedad_ambiente_promedio = HumedadDeAmbiente.objects.filter(planta__usuario_id=usuario_id).annotate(
+        humedad_ambiente_promedio = HumedadDeAmbiente.objects.filter(planta=planta).annotate(
             dia=TruncDate('fecha_hora')
-        ).values('dia', 'planta_id').annotate(valor_avg=Avg('valor')).values('dia', 'planta_id', 'valor_avg')
+        ).values('dia').annotate(valor_avg=Avg('valor')).values('dia', 'valor_avg')
 
         data = []
         for item in intensidad_promedio:
             dia = datetime.combine(item['dia'], time.min)
-            planta_id = item['planta_id']
-            planta = IntensidadDeLuz.objects.get(id=planta_id).planta
             data.append({
                 'dia': dia.isoformat(),
                 'planta': planta.nombre,
@@ -123,8 +125,6 @@ class DatosPromedios(GenericAPIView):
 
         for item in temperatura_promedio:
             dia = datetime.combine(item['dia'], time.min)
-            planta_id = item['planta_id']
-            planta = Temperatura.objects.get(id=planta_id).planta
             data.append({
                 'dia': dia.isoformat(),
                 'planta': planta.nombre,
@@ -133,8 +133,6 @@ class DatosPromedios(GenericAPIView):
 
         for item in humedad_suelo_promedio:
             dia = datetime.combine(item['dia'], time.min)
-            planta_id = item['planta_id']
-            planta = HumedadDeSuelo.objects.get(id=planta_id).planta
             data.append({
                 'dia': dia.isoformat(),
                 'planta': planta.nombre,
@@ -143,8 +141,6 @@ class DatosPromedios(GenericAPIView):
 
         for item in humedad_ambiente_promedio:
             dia = datetime.combine(item['dia'], time.min)
-            planta_id = item['planta_id']
-            planta = HumedadDeAmbiente.objects.get(id=planta_id).planta
             data.append({
                 'dia': dia.isoformat(),
                 'planta': planta.nombre,
@@ -152,3 +148,14 @@ class DatosPromedios(GenericAPIView):
             })
 
         return Response(data, status=status.HTTP_200_OK)
+
+class PlantaConsultaView(GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ConsultaSerializer
+
+    def get(self, request, *args, **kwargs):
+        user_id = self.kwargs['id']
+        user = get_object_or_404(User, id=user_id)
+        queryset = Planta.objects.filter(usuario_id=user_id)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
