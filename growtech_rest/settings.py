@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.plants',
     'apps.notifications',
+    'apps.GenerarReporte',
     'apps.SIL',
     'apps.ST',
     'apps.SHS',

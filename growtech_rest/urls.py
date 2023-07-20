@@ -12,6 +12,7 @@ from rest_framework_simplejwt.views import (
 from apps.users.views import Login,Logout,Register,EmailSenderView
 from apps.plants.api.urls import urlpatterns 
 from apps.SIL.api.urls import urlpatterns
+from apps.GenerarReporte.api.urls import urlpatterns
 schema_view = get_schema_view(
    openapi.Info(
       title="Documentación de API",
@@ -42,6 +43,7 @@ urlpatterns = [
    path('humedad/suelo/', include('apps.SHS.api.urls')),
    path('humedad/ambiente/', include('apps.SHA.api.urls')),
    path('notificacion/', include('apps.notifications.api.urls')),
+   path('generar/',include('apps.GenerarReporte.api.urls')),
    path('email-sender/', EmailSenderView.as_view(), name='email-sender'),
 ]
 
