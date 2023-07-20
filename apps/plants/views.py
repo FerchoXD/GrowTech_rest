@@ -18,7 +18,7 @@ from django.db.models import Avg
 from django.db.models.functions import TruncDate
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-
+from apps.plants.models import Planta
 
 class PlantaList(ListAPIView):
     queryset = Planta.objects.all()
@@ -159,3 +159,103 @@ class PlantaConsultaView(GenericAPIView):
         queryset = Planta.objects.filter(usuario_id=user_id)
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+class PlantaView(GenericAPIView):
+    def post(self, request):
+        # Obtener los parámetros de la solicitud
+        usuario_id = request.data.get('usuario_id')
+        planta_id = request.data.get('planta_id')
+
+        try:
+            # Obtener la planta correspondiente al usuario y planta IDs
+            planta = get_object_or_404(Planta, usuario_id=usuario_id, id=planta_id)
+        except Planta.DoesNotExist:
+            return Response({'error': 'La planta no existe o no está asociada al usuario'}, status=404)
+
+        # Obtener el nombre de la planta
+        nombre = planta.nombre
+
+        # Obtener la humedad
+        humedad = self.obtener_ultima_humedad(planta_id)
+        # Obtener los valores de humedad de suelo
+        humedades_suelo = self.obtener_humedades_suelo(planta_id)
+
+        # Calcular medidas de estadística descriptiva de humedad suelo
+        media = self.calcular_media(humedades_suelo)
+        mediana = self.calcular_mediana(humedades_suelo)
+        moda = self.calcular_moda(humedades_suelo)
+        desviacion = self.calcular_desviacion_estandar(humedades_suelo)
+
+        # Calcular el status basado en las medidas de estadística descriptiva
+        status = self.calcular_status(media, mediana, moda, desviacion)
+
+        # Crear el diccionario de respuesta
+        response_data = {
+            'nombre': nombre,
+            'humedad': humedad,
+            'status': status
+        }
+
+        return Response(response_data)
+
+    def obtener_ultima_humedad(self, planta_id):
+        try:
+            humedad = HumedadDeAmbiente.objects.filter(planta_id=planta_id).latest('fecha_hora')
+            return humedad.valor
+        except HumedadDeAmbiente.DoesNotExist:
+            return None
+
+    def obtener_humedades_suelo(self, planta_id):
+        try:
+            humedades_suelo = HumedadDeSuelo.objects.filter(planta_id=planta_id).values_list('valor', flat=True)
+            return list(humedades_suelo)
+        except HumedadDeSuelo.DoesNotExist:
+            return None
+
+    def calcular_media(self, valores):
+        if len(valores) > 0:
+            return sum(valores) / len(valores)
+        return None
+
+    def calcular_mediana(self, valores):
+        valores_ordenados = sorted(valores)
+        n = len(valores)
+        if n % 2 == 0:
+            mediana = (valores_ordenados[n // 2 - 1] + valores_ordenados[n // 2]) / 2
+        else:
+            mediana = valores_ordenados[n // 2]
+        return mediana
+
+    def calcular_moda(self, valores):
+        frecuencias = {}
+        for valor in valores:
+            if valor in frecuencias:
+                frecuencias[valor] += 1
+            else:
+                frecuencias[valor] = 1
+        modas = []
+        max_frecuencia = max(frecuencias.values())
+        for valor, frecuencia in frecuencias.items():
+            if frecuencia == max_frecuencia:
+                modas.append(valor)
+        if len(modas) == len(valores):
+            return None
+        return modas
+
+    def calcular_desviacion_estandar(self, valores):
+        media = self.calcular_media(valores)
+        if media:
+            n = len(valores)
+            suma_cuadrados = sum((x - media) ** 2 for x in valores)
+            desviacion_estandar = (suma_cuadrados / n) ** 0.5
+            return desviacion_estandar
+        return None
+
+
+    def calcular_status(self,media,mediana,moda,desviacion):
+        #
+        
+        if media and mediana and all(valor < 90 for valor in moda):
+            if desviacion < 35:  
+                return True
+        return False

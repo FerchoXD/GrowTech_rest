@@ -1,5 +1,5 @@
 from django.urls import path
-from apps.plants.views import PlantaList, PlantaCreate,PlantaRetrieveUpdateDestroy,ValidacionPlants,PlantaListByUser,DatosPromedios,PlantaConsultaView
+from apps.plants.views import PlantaList, PlantaCreate,PlantaRetrieveUpdateDestroy,ValidacionPlants,PlantaListByUser,DatosPromedios,PlantaConsultaView,PlantaView
 
 urlpatterns = [
     path('', PlantaList.as_view(), name='plant-list'),
@@ -9,4 +9,5 @@ urlpatterns = [
     path('listar/plantas/<int:id>/', PlantaListByUser.as_view(), name='planta-listar-por-usuario'),
     path('obtener-datos-promedio/', DatosPromedios.as_view(), name='datos-promedio'),
     path('consulta/<int:id>/', PlantaConsultaView.as_view(), name='consulta_plantas'),
+    path('status-estadistico/', PlantaView.as_view(), name='status-estadistico'),
 ]
