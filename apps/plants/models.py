@@ -9,7 +9,7 @@ class Planta(models.Model):
     status = models.BooleanField()
 
     def save(self, *args, **kwargs):
-        self.nombreU = self.usuario_id.username
+        self.nombreU = self.usuario.username
         super().save(*args, **kwargs)
 
     class Meta:
